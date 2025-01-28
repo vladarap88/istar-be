@@ -1,37 +1,38 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseNotFound
 from .models import Animal, PageFormat
-import boto3
 from . import settings
+from django.http import HttpResponse
+from . import pdf
+from .s3 import S3
+from .page import Page
 
 
-def handle_name(animal_name, animals, page_templates, name_chars_set):
+def handle_name(animal_name, animals, page_templates, name_chars_set, image_store: S3):
     pages = []
     for letter in animal_name.lower():
         animal_name, description = animals[letter]
         if letter in name_chars_set:
             pages.append(
-                page_templates["repeated_letter"]
-                .replace("<letter>", letter.upper())
-                .replace("<animal_name>", animal_name)
+                Page(
+                    page_templates["repeated_letter"]
+                    .replace("<letter>", letter.upper())
+                    .replace("<animal_name>", animal_name),
+                    image_store.get_image(animal_name),
+                )
             )
         else:
-            pages.append(description)
+            pages.append(Page(description, image_store.get_image(animal_name)))
             name_chars_set.add(letter)
 
         pages.append(
-            page_templates["after_animal"]
-            .replace("<letter>", letter.upper())
-            .replace("<animal_name>", animal_name)
+            Page(
+                page_templates["after_animal"]
+                .replace("<letter>", letter.upper())
+                .replace("<animal_name>", animal_name)
+            )
         )
     return pages
-
-
-def get_image(s3, animal_name):
-    file_obj = s3.get_object(
-        Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=animal_name + ".jpeg"
-    )
-    return file_obj["Body"].read()
 
 
 def get_book(request):
@@ -58,31 +59,34 @@ def get_book(request):
     }
 
     # initialize s3 connection
-    s3 = boto3.client(
-        "s3",
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_S3_REGION_NAME,
-    )
+    image_store = S3()
+
     # animal_pic = get_image(s3, "Bear")
 
-    book = [
-        page_templates["first_page"],
-        page_templates["second_page"].replace("<date>", birth_date),
-        page_templates["third_page"],
+    pages_list = [
+        Page(page_templates["first_page"]),
+        Page(page_templates["second_page"].replace("<date>", birth_date)),
+        Page(page_templates["third_page"]),
     ]
 
     name_chars_set = set()
-    book += handle_name(first_name, animals, page_templates, name_chars_set)
-    book.append(
-        page_templates["first_name"].replace("<first_name>", first_name.upper())
+    pages_list += handle_name(
+        first_name, animals, page_templates, name_chars_set, image_store
     )
-    book += handle_name(last_name, animals, page_templates, name_chars_set)
-
-    book.append(
-        page_templates["last_page"]
-        .replace("<last_name>", " ".join([first_name.upper(), last_name.upper()]))
-        .replace("<date>", birth_date)
+    pages_list.append(
+        Page(page_templates["first_name"].replace("<first_name>", first_name.upper()))
+    )
+    pages_list += handle_name(
+        last_name, animals, page_templates, name_chars_set, image_store
     )
 
-    return JsonResponse(book, safe=False)
+    pages_list.append(
+        Page(
+            page_templates["last_page"]
+            .replace("<last_name>", " ".join([first_name.upper(), last_name.upper()]))
+            .replace("<date>", birth_date)
+        )
+    )
+    pdf.create_book_pdf("/users/vladarapaport/book.pdf", pages_list)
+
+    return JsonResponse("ok", safe=False)
