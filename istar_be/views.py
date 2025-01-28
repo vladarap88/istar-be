@@ -1,17 +1,19 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseNotFound
 from .models import Animal, PageFormat
+import boto3
+from . import settings
 
 
-def handle_name(name, animals, page_templates, name_chars_set):
+def handle_name(animal_name, animals, page_templates, name_chars_set):
     pages = []
-    for letter in name.lower():
-        name, description = animals[letter]
+    for letter in animal_name.lower():
+        animal_name, description = animals[letter]
         if letter in name_chars_set:
             pages.append(
                 page_templates["repeated_letter"]
                 .replace("<letter>", letter.upper())
-                .replace("<animal_name>", name)
+                .replace("<animal_name>", animal_name)
             )
         else:
             pages.append(description)
@@ -20,9 +22,16 @@ def handle_name(name, animals, page_templates, name_chars_set):
         pages.append(
             page_templates["after_animal"]
             .replace("<letter>", letter.upper())
-            .replace("<animal_name>", name)
+            .replace("<animal_name>", animal_name)
         )
     return pages
+
+
+def get_image(s3, animal_name):
+    file_obj = s3.get_object(
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=animal_name + ".jpeg"
+    )
+    return file_obj["Body"].read()
 
 
 def get_book(request):
@@ -48,7 +57,15 @@ def get_book(request):
         page.page_number: page.description for page in PageFormat.objects.all()
     }
 
-    # book prologue
+    # initialize s3 connection
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_S3_REGION_NAME,
+    )
+    # animal_pic = get_image(s3, "Bear")
+
     book = [
         page_templates["first_page"],
         page_templates["second_page"].replace("<date>", birth_date),
