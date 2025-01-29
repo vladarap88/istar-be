@@ -1,8 +1,7 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound
 from .models import Animal, PageFormat
 from . import settings
-from django.http import HttpResponse
 from . import pdf
 from .s3 import S3
 from .page import Page
@@ -87,6 +86,8 @@ def get_book(request):
             .replace("<date>", birth_date)
         )
     )
-    pdf.create_book_pdf("/tmp/book.pdf", pages_list)
 
-    return JsonResponse("ok", safe=False)
+    content = pdf.create_book_pdf(pages_list)
+    response = HttpResponse(content, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="book.pdf"'
+    return response

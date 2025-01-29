@@ -42,7 +42,6 @@
 # from typing import List
 
 
-
 # def create_book_pdf(filename, pages_content: List[Page]):
 #     pdf = SimpleDocTemplate(filename, pagesize=letter)
 
@@ -64,10 +63,10 @@
 #         # Add vertical space to position content in the middle upper space (~1/3 down the page)
 #         upper_space = page_height / 3
 #         content.append(Spacer(1, upper_space))
-        
+
 #         # Add text in the middle upper space of the page
 #         content.append(Paragraph(page.text, custom_style))
-        
+
 #         # Add a gap of 2 lines (~0.5 inch) between text and image if the image exists
 #         if page.image:
 #             content.append(Spacer(1, 10))  # Gap for image
@@ -84,7 +83,15 @@
 #     pdf.build(content)
 
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer, PageBreak, PageTemplate, Frame
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Image,
+    Spacer,
+    PageBreak,
+    PageTemplate,
+    Frame,
+)
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from io import BytesIO
@@ -92,6 +99,7 @@ from .page import Page
 from typing import List
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
+
 
 # Function to draw the light blue background with a sun on odd pages
 def draw_background(canvas, doc, page_num):
@@ -113,8 +121,10 @@ def draw_background(canvas, doc, page_num):
 
         canvas.circle(sun_x, sun_y, sun_radius, fill=1)  # Draw the bright yellow sun
 
-def create_book_pdf(filename, pages_content: List[Page]):
-    pdf = SimpleDocTemplate(filename, pagesize=letter)
+
+def create_book_pdf(pages_content: List[Page]):
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=letter)
 
     # Define a custom style for the text
     custom_style = ParagraphStyle(
@@ -135,25 +145,30 @@ def create_book_pdf(filename, pages_content: List[Page]):
     def on_page(canvas, doc):
         page_num = doc.page
 
-        
         # Draw the light blue background with the sun on every page (sun on odd pages)
         draw_background(canvas, doc, page_num)
 
     # Create a Frame to hold content on the page (this is essential for placing flowables)
-    frame = Frame(0.5 * inch, 0.5 * inch, page_width - 1 * inch, page_height - 1 * inch, id='normal')
+    frame = Frame(
+        0.5 * inch,
+        0.5 * inch,
+        page_width - 1 * inch,
+        page_height - 1 * inch,
+        id="normal",
+    )
 
     # Add the PageTemplate with the custom onPage function and the frame
-    page_template = PageTemplate(id='custom', frames=frame, onPage=on_page)
+    page_template = PageTemplate(id="custom", frames=frame, onPage=on_page)
     pdf.addPageTemplates([page_template])
 
     for i, page in enumerate(pages_content):
         # Add vertical space to position content in the middle upper space (~1/3 down the page)
         upper_space = page_height / 3
         content.append(Spacer(1, upper_space))
-        
+
         # Add text in the middle upper space of the page
         content.append(Paragraph(page.text, custom_style))
-        
+
         # Add a gap of 2 lines (~0.5 inch) between text and image if the image exists
         if page.image:
             content.append(Spacer(1, 10))  # Gap for image
@@ -168,6 +183,5 @@ def create_book_pdf(filename, pages_content: List[Page]):
 
     # Build the PDF
     pdf.build(content)
-
-
-
+    buffer.seek(0)
+    return buffer
