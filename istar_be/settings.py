@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from dotenv import load_dotenv
+import dj_database_url
 
 from pathlib import Path
 
@@ -78,16 +79,24 @@ WSGI_APPLICATION = "istar_be.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Default: Local PostgreSQL database
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",  # Database engine for PostgreSQL
-        "NAME": "animal_story_db",  # Your database name
-        "USER": "",  # Leave empty for default user
-        "PASSWORD": "",  # Leave empty for no password
-        "HOST": "localhost",  # Use 'localhost' or '127.0.0.1'
-        "PORT": "5432",  # Default PostgreSQL port
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("LOCAL_DB_NAME", "animal_story_db"),
+        "USER": os.getenv("LOCAL_DB_USER", ""),
+        "PASSWORD": os.getenv("LOCAL_DB_PASSWORD", ""),
+        "HOST": os.getenv("LOCAL_DB_HOST", "localhost"),
+        "PORT": os.getenv("LOCAL_DB_PORT", "5432"),
     }
 }
+
+# If DATABASE_URL exists (Render PostgreSQL), use it
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES["default"] = dj_database_url.config(
+        default=DATABASE_URL, conn_max_age=600
+    )
 
 
 # Password validation
@@ -141,8 +150,8 @@ AWS_QUERYSTRING_AUTH = False  # Set to True if you want private access
 # Media Files Storage
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-# Static Files Storage (optional)
-# STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # URL for accessing uploaded files
 AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
