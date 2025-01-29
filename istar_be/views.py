@@ -87,6 +87,6 @@ def get_book(request):
             .replace("<date>", birth_date)
         )
     )
-    pdf.create_book_pdf("/users/vladarapaport/book.pdf", pages_list)
+    pdf.create_book_pdf("/tmp/book.pdf", pages_list)
 
     return JsonResponse("ok", safe=False)
