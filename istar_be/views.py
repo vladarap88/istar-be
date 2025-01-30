@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from .models import Animal, PageFormat
 from . import settings
 from . import pdf
@@ -36,17 +36,16 @@ def handle_name(animal_name, animals, page_templates, name_chars_set, image_stor
 
 def get_book(request):
 
-    # first_name = "Vlada"
-    # last_name = "Rapaport"
-    # birth_date = "June 30th, 1988"
-
     # Get user input from request
-    first_name = request.GET.get("first_name", "").strip()
-    last_name = request.GET.get("last_name", "").strip()
+    first_name = request.GET.get("first_name", "").strip().lower()
+    last_name = request.GET.get("last_name", "").strip().lower()
     birth_date = request.GET.get("birth_date", "").strip()
 
     if not first_name or not last_name or not birth_date:
         return HttpResponseNotFound("One or more required parameters are missing")
+
+    if not first_name.isalpha() or not last_name.isalpha():
+        return HttpResponseBadRequest("First/last names contain illegal characters")
 
     # Fetch all data from the database
     animals = {
