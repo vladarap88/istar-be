@@ -1,10 +1,15 @@
+import re
+
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from .models import Animal, PageFormat
 from . import settings
 from . import pdf
 from .s3 import S3
 from .page import Page
+from .email import send_email
 
 
 def handle_name(animal_name, animals, page_templates, name_chars_set, image_store: S3):
@@ -34,18 +39,29 @@ def handle_name(animal_name, animals, page_templates, name_chars_set, image_stor
     return pages
 
 
-def get_book(request):
+def is_valid_email(email):
+    """Validates an email address using a regex pattern."""
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    return re.match(pattern, email) is not None
 
+
+@api_view(["POST"])  # Allows only POST requests
+def create_book(request):
     # Get user input from request
-    first_name = request.GET.get("first_name", "").strip().lower()
-    last_name = request.GET.get("last_name", "").strip().lower()
-    birth_date = request.GET.get("birth_date", "").strip()
+    first_name = request.data.get("first_name", "").strip().lower()
+    last_name = request.data.get("last_name", "").strip().lower()
+    birth_date = request.data.get("birth_date", "").strip()
+    email = request.data.get("email", "")
+    personal_note = request.data.get("personal_note", "")
 
     if not first_name or not last_name or not birth_date:
         return HttpResponseNotFound("One or more required parameters are missing")
 
     if not first_name.isalpha() or not last_name.isalpha():
         return HttpResponseBadRequest("First/last names contain illegal characters")
+
+    if email and not is_valid_email(email):
+        return HttpResponseBadRequest("invalid email address")
 
     # Fetch all data from the database
     animals = {
@@ -59,9 +75,11 @@ def get_book(request):
     # initialize s3 connection
     image_store = S3()
 
-    # animal_pic = get_image(s3, "Bear")
+    pages_list = []
+    if personal_note:
+        pages_list.append(Page(personal_note[:200]))
 
-    pages_list = [
+    pages_list += [
         Page(page_templates["first_page"]),
         Page(page_templates["second_page"].replace("<date>", birth_date)),
         Page(page_templates["third_page"]),
@@ -86,7 +104,13 @@ def get_book(request):
         )
     )
 
-    content = pdf.create_book_pdf(pages_list)
-    response = HttpResponse(content, content_type="application/pdf")
+    pdf_file = pdf.create_book_pdf(pages_list)
+    file_data = pdf_file.getvalue()
+
+    response = HttpResponse(pdf_file, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="book.pdf"'
+
+    if email:
+        send_email(first_name, email, file_data)
+
     return response

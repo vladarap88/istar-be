@@ -20,5 +20,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("", views.get_book, name="simple_response"),  # Maps GET / to the view
+    path("", views.create_book, name="simple_response"),  # Maps GET / to the view
 ]

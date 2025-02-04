@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "istar_be",
     "corsheaders",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -162,3 +163,5 @@ AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
 MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
