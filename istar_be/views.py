@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
@@ -45,6 +46,18 @@ def is_valid_email(email):
     return re.match(pattern, email) is not None
 
 
+def format_date(date_str):
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+
+    day = date_obj.day
+    suffix = (
+        "th" if 11 <= day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
+    )
+
+    formatted_date = date_obj.strftime(f"%b {day}{suffix}, %Y")
+    return formatted_date
+
+
 @api_view(["POST"])  # Allows only POST requests
 def create_book(request):
     # Get user input from request
@@ -62,6 +75,8 @@ def create_book(request):
 
     if email and not is_valid_email(email):
         return HttpResponseBadRequest("invalid email address")
+
+    birth_date = format_date(birth_date)
 
     # Fetch all data from the database
     animals = {
