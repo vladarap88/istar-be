@@ -3,7 +3,6 @@ import boto3
 
 animals_dict = {}
 
-
 class S3:
     def __init__(self):
         self.s3 = boto3.client(

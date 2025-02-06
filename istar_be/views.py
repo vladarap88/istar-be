@@ -1,6 +1,5 @@
 import re
 from datetime import datetime
-
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from rest_framework.decorators import api_view
@@ -41,7 +40,6 @@ def handle_name(animal_name, animals, page_templates, name_chars_set, image_stor
 
 
 def is_valid_email(email):
-    """Validates an email address using a regex pattern."""
     pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     return re.match(pattern, email) is not None
 
@@ -58,9 +56,8 @@ def format_date(date_str):
     return formatted_date
 
 
-@api_view(["POST"])  # Allows only POST requests
+@api_view(["POST"]) 
 def create_book(request):
-    # Get user input from request
     first_name = request.data.get("first_name", "").strip().lower()
     last_name = request.data.get("last_name", "").strip().lower()
     birth_date = request.data.get("birth_date", "").strip()
@@ -78,7 +75,6 @@ def create_book(request):
 
     birth_date = format_date(birth_date)
 
-    # Fetch all data from the database
     animals = {
         animal.name[0].lower(): (animal.name, animal.description)
         for animal in Animal.objects.all()
@@ -87,7 +83,6 @@ def create_book(request):
         page.page_number: page.description for page in PageFormat.objects.all()
     }
 
-    # initialize s3 connection
     image_store = S3()
 
     pages_list = []
@@ -129,3 +124,31 @@ def create_book(request):
         send_email(first_name, email, file_data)
 
     return response
+
+
+
+
+
+# from django.http import JsonResponse
+# from .models import Animal
+# from .s3 import S3
+# from rest_framework.decorators import api_view
+
+# @api_view(["GET"])
+# def get_all_animals(request):
+#     # Initialize S3 connection
+#     image_store = S3()
+    
+#     # Fetch all animals from the database
+#     animals = Animal.objects.all()
+    
+#     # Prepare response data
+#     animal_data = []
+#     for animal in animals:
+#         animal_data.append({
+#             "name": animal.name,
+#             "description": animal.description,
+#             "image_url": image_store.get_image(animal.name)
+#         })
+    
+#     return JsonResponse({"animals": animal_data}, safe=False)

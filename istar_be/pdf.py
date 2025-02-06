@@ -19,7 +19,6 @@ def create_book_pdf(pages_content: List[Page]):
     buffer = BytesIO()
     pdf = SimpleDocTemplate(buffer, pagesize=letter)
 
-    # Define a custom style for the text
     custom_style = ParagraphStyle(
         name="CustomStyle",
         fontName="Courier",
@@ -29,21 +28,18 @@ def create_book_pdf(pages_content: List[Page]):
         spaceAfter=12,
     )
 
-    # Define the title style (same font as book)
     title_style = ParagraphStyle(
         name="TitleStyle",
-        fontName="Courier",  # Same as book text
-        fontSize=40,  # Larger for emphasis
-        alignment=1,  # Center align
+        fontName="Courier",  
+        fontSize=40, 
+        alignment=1, 
         spaceAfter=30,
     )
 
-    # List to hold all content for the PDF
     content = []
     page_height = letter[1]
     page_width = letter[0]
 
-    # Create a Frame to hold content on the page
     frame = Frame(
         0.5 * inch,
         0.5 * inch,
@@ -52,31 +48,27 @@ def create_book_pdf(pages_content: List[Page]):
         id="normal",
     )
 
-    # Add the PageTemplate with the frame only
     page_template = PageTemplate(id="custom", frames=frame)
     pdf.addPageTemplates([page_template])
 
-    # Add Title Page
-    content.append(Spacer(1, page_height / 3))  # Move title down to center
-    content.append(Paragraph("iStar", title_style))  # Same font as the book
-    content.append(PageBreak())  # Move to the next page
+    content.append(Spacer(1, page_height / 3))  
+    content.append(Paragraph("iStar", title_style))  
+    content.append(PageBreak())  
 
     for i, page in enumerate(pages_content):
         content.append(Paragraph(page.text, custom_style))
 
-        # If there is an image, add a larger gap
         if page.image:
-            content.append(Spacer(1, 30))  # Increased gap between text and image
+            content.append(Spacer(1, 30))  
             image = Image(BytesIO(page.image))
             image.drawWidth = 3 * inch
             image.drawHeight = 3 * inch
             content.append(image)
 
-        # Add a page break if it's not the last page
         if i < len(pages_content) - 1:
             content.append(PageBreak())
 
-    # Build the PDF
+   
     pdf.build(content)
     buffer.seek(0)
     return buffer

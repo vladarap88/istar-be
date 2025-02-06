@@ -1,5 +1,3 @@
-# using SendGrid's Python Library
-# https://github.com/sendgrid/sendgrid-python
 import os
 import base64
 from sendgrid import SendGridAPIClient
