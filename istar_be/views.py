@@ -124,28 +124,3 @@ def create_book(request):
         send_email(first_name, email, file_data)
 
     return response
-
-
-# from django.http import JsonResponse
-# from .models import Animal
-# from .s3 import S3
-# from rest_framework.decorators import api_view
-
-# @api_view(["GET"])
-# def get_all_animals(request):
-#     # Initialize S3 connection
-#     image_store = S3()
-
-#     # Fetch all animals from the database
-#     animals = Animal.objects.all()
-
-#     # Prepare response data
-#     animal_data = []
-#     for animal in animals:
-#         animal_data.append({
-#             "name": animal.name,
-#             "description": animal.description,
-#             "image_url": image_store.get_image(animal.name)
-#         })
-
-#     return JsonResponse({"animals": animal_data}, safe=False)
