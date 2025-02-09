@@ -15,7 +15,7 @@ from .page import Page
 from typing import List
 
 
-def create_book_pdf(pages_content: List[Page]):
+def create_book_pdf(pages_content: List[Page], image_store):
     buffer = BytesIO()
     pdf = SimpleDocTemplate(buffer, pagesize=letter)
 
@@ -26,14 +26,6 @@ def create_book_pdf(pages_content: List[Page]):
         leading=20,
         alignment=1,
         spaceAfter=12,
-    )
-
-    title_style = ParagraphStyle(
-        name="TitleStyle",
-        fontName="Courier",  
-        fontSize=40, 
-        alignment=1, 
-        spaceAfter=30,
     )
 
     content = []
@@ -50,16 +42,18 @@ def create_book_pdf(pages_content: List[Page]):
 
     page_template = PageTemplate(id="custom", frames=frame)
     pdf.addPageTemplates([page_template])
-
-    content.append(Spacer(1, page_height / 3))  
-    content.append(Paragraph("iStar", title_style))  
-    content.append(PageBreak())  
+    content.append(Spacer(1, page_height / 4))
+    image = Image(BytesIO(image_store.get_image("1")))
+    image.drawWidth = 3 * inch
+    image.drawHeight = 3 * inch
+    content.append(image)
+    content.append(PageBreak())
 
     for i, page in enumerate(pages_content):
         content.append(Paragraph(page.text, custom_style))
 
         if page.image:
-            content.append(Spacer(1, 30))  
+            content.append(Spacer(1, 30))
             image = Image(BytesIO(page.image))
             image.drawWidth = 3 * inch
             image.drawHeight = 3 * inch
@@ -68,7 +62,6 @@ def create_book_pdf(pages_content: List[Page]):
         if i < len(pages_content) - 1:
             content.append(PageBreak())
 
-   
     pdf.build(content)
     buffer.seek(0)
     return buffer

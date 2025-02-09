@@ -1,7 +1,8 @@
 from . import settings
 import boto3
 
-animals_dict = {}
+image_dict = {}
+
 
 class S3:
     def __init__(self):
@@ -12,14 +13,14 @@ class S3:
             region_name=settings.AWS_S3_REGION_NAME,
         )
 
-    def get_image(self, animal_name):
-        animal_name = animal_name.lower()
-        if animal_name in animals_dict:
-            return animals_dict[animal_name]
+    def get_image(self, name):
+        name = name.lower()
+        if name in image_dict:
+            return image_dict[name]
 
         file_obj = self.s3.get_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=animal_name + ".jpeg"
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=name + ".jpeg"
         )
-        animal_image = file_obj["Body"].read()
-        animals_dict[animal_name] = animal_image
-        return animal_image
+        image = file_obj["Body"].read()
+        image_dict[name] = image
+        return image

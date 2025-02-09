@@ -56,7 +56,7 @@ def format_date(date_str):
     return formatted_date
 
 
-@api_view(["POST"]) 
+@api_view(["POST"])
 def create_book(request):
     first_name = request.data.get("first_name", "").strip().lower()
     last_name = request.data.get("last_name", "").strip().lower()
@@ -114,7 +114,7 @@ def create_book(request):
         )
     )
 
-    pdf_file = pdf.create_book_pdf(pages_list)
+    pdf_file = pdf.create_book_pdf(pages_list, image_store)
     file_data = pdf_file.getvalue()
 
     response = HttpResponse(pdf_file, content_type="application/pdf")
@@ -126,9 +126,6 @@ def create_book(request):
     return response
 
 
-
-
-
 # from django.http import JsonResponse
 # from .models import Animal
 # from .s3 import S3
@@ -138,10 +135,10 @@ def create_book(request):
 # def get_all_animals(request):
 #     # Initialize S3 connection
 #     image_store = S3()
-    
+
 #     # Fetch all animals from the database
 #     animals = Animal.objects.all()
-    
+
 #     # Prepare response data
 #     animal_data = []
 #     for animal in animals:
@@ -150,5 +147,5 @@ def create_book(request):
 #             "description": animal.description,
 #             "image_url": image_store.get_image(animal.name)
 #         })
-    
+
 #     return JsonResponse({"animals": animal_data}, safe=False)
